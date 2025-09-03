@@ -18,3 +18,6 @@ void magnet_update() {
     digitalWrite(_ledPin, HIGH);
   }
 }
+
+
+//라이브러리 설치 필요 없음
