@@ -1,23 +1,21 @@
-#include "magnet.h"
+int LED = 2; // LED 핀
 
-static uint8_t _reedPin = 3;
-static uint8_t _ledPin = 2;
-
-void magnet_init(uint8_t reedPin, uint8_t ledPin) {
-  _reedPin = reedPin;
-  _ledPin = ledPin;
-  pinMode(_reedPin, INPUT);
-  pinMode(_ledPin, OUTPUT);
+void setup(){
+  Serial.begin(9600);
+  pinMode(3, INPUT); // 리드스위치 신호핀
+  pinMode(LED, OUTPUT);
 }
 
-void magnet_update() {
-  // 리드스위치가 HIGH 면 LED OFF, LOW면 LED ON
-  if (digitalRead(_reedPin) == HIGH) {
-    digitalWrite(_ledPin, LOW);
-  } else {
-    digitalWrite(_ledPin, HIGH);
+void loop(){
+// 리드스위치가 HIGH 면 LED OFF
+  if(digitalRead(3) == 1){
+    digitalWrite(LED, LOW);
   }
+// 리드스위치가 LOW면 LED ON
+  else{
+    digitalWrite(LED, HIGH);
+  }
+  delay(500);
 }
 
 
-//라이브러리 설치 필요 없음
