@@ -16,7 +16,7 @@ class Nfc {
       // authorized UID 예시 (필요하면 사용)
       static const byte authorizedUID_NFC[4] = { 0x83, 0xFE, 0x59, 0x9A };
     }
-}; // <- 세미콜론 필수
+};
 Nfc nfc;
 
 class Ser_motor : public Nfc {
