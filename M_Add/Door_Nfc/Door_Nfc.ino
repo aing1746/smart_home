@@ -4,63 +4,65 @@
 
 #define RST_PIN 8
 #define SS_PIN 9
+#define MOTOR_PIN 4
 
 Servo servo;
-MFRC522 rc522(RST_PIN, SS_PIN);
+MFRC522 rc522(SS_PIN, RST_PIN); // SS, RST 순서
 
-class Nfc {
-  public:
-    void setup() {
-      SPI.begin();
-      rc522.PCD_Init();
-      // authorized UID 예시 (필요하면 사용)
-      static const byte authorizedUID_NFC[4] = { 0x83, 0xFE, 0x59, 0x9A };
+// 허용된 UID (원래 코드 값 유지)
+static const byte authorizedUID[4] = { 0x83, 0xFE, 0x59, 0x9A };
+
+int Now_angle = 100;   // 초기 닫힘 각도
+const int open_door = 30;
+const int close_door = 100;
+
+void initNfc() {
+  SPI.begin();
+  rc522.PCD_Init();
+}
+
+void initServo() {
+  servo.attach(MOTOR_PIN);
+  servo.write(Now_angle);
+}
+
+void door_open_close() {
+  if (!rc522.PICC_IsNewCardPresent()) {
+    return;
+  }
+  if (!rc522.PICC_ReadCardSerial()) {
+    return;
+  }
+
+  // UID 비교 (4바이트)
+  bool authorized = (rc522.uid.size >= 4);
+  if (authorized) {
+    for (byte i = 0; i < 4; ++i) {
+      if (rc522.uid.uidByte[i] != authorizedUID[i]) { authorized = false; break; }
     }
-};
-Nfc nfc;
+  }
 
-class Ser_motor : public Nfc {
-  protected:
-    const int motorPin = 4;
-    int Now_angle = 100;   // 초기 닫힘 각도
-    int open_door = 30;
-    int close_door = 100;
-
-  public:
-    void setup() {
-      servo.attach(motorPin);
-      servo.write(Now_angle); 
-    } 
-
-    void door_open_close() {
-      if ( !rc522.PICC_IsNewCardPresent() || !rc522.PICC_ReadCardSerial() ) {
-        return;
-      }
-      if (rc522.uid.uidByte[0]==0x83 && rc522.uid.uidByte[1]==0xFE && rc522.uid.uidByte[2]==0x59 
-          && rc522.uid.uidByte[3]==0x9A) {
-        Serial.println("<< OK !!! >>  Registered card...");
-        for (int a = close_door; a >= open_door; --a) {
-          servo.write(a);
-          delay(10);
-        }
-      } else {
-        Serial.println("<< WARNING !!! >>  This card is not registered");
-        delay(500);
-      }
+  if (authorized) {
+    Serial.println("<< OK !!! >>  Registered card...");
+    for (int a = close_door; a >= open_door; --a) {
+      servo.write(a);
+      delay(10);
     }
+  } else {
+    Serial.println("<< WARNING !!! >>  This card is not registered");
+    delay(500);
+  }
 
-    void loop() {
-      door_open_close();  
-    }
-};
-Ser_motor ser_motor;
+  rc522.PICC_HaltA();
+  rc522.PCD_StopCrypto1();
+}
 
 void setup() {
   Serial.begin(9600);
-  nfc.setup();
-  ser_motor.setup();
+  initNfc();
+  initServo();
 }
 
 void loop() {
-  ser_motor.loop();
+  door_open_close();
 }
