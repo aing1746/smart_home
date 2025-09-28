@@ -1,6 +1,7 @@
 #include <Servo.h>   
 #include <MFRC522.h>
 #include <SPI.h>
+#include <Keypad.h>
 
 #define RST_PIN 8
 #define SS_PIN 9
@@ -15,6 +16,20 @@ static const byte authorizedUID[4] = { 0x83, 0xFE, 0x59, 0x9A };
 int Now_angle = 100;   // 초기 닫힘 각도
 const int open_door = 30;
 const int close_door = 100;
+const byte ROWS = 4;
+const byte COLS = 4;
+
+char keys[ROWS][COLS] = {
+  {'1','2','3','A'},
+  {'4','5','6','B'},
+  {'7','8','9','C'},
+  {'*','0','#','D'}
+};
+
+byte rowPins[ROWS] = {29, 28, 27, 26};
+byte colPins[COLS] = {25, 24, 23, 22};
+
+Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 void initNfc() {
   SPI.begin();
@@ -45,14 +60,13 @@ void door_open_close() {
   }
 
   if (authorized) {
-    Serial.println("tlqkf");
+    Serial.println("<< OK !!! >>  Registered card...");
     for (int a = close_door; a >= open_door; --a) {
       servo.write(a);
       delay(10);
     } 
   } else{
-    // delay(100);
-    Serial.println("pls");
+    delay(100);
     for (int a = open_door; a <= close_door; ++a) {
       servo.write(a);
       delay(10);
@@ -71,4 +85,8 @@ void setup() {
 
 void loop() {
   door_open_close();
+  char k = keypad.getKey();
+  if (k) {
+    Serial.println(k);
+  }
 }
