@@ -34,8 +34,10 @@ void door_open_close() {
     return;
   }
 
+
   // UID 비교 (4바이트)
   bool authorized = (rc522.uid.size >= 4);
+
   if (authorized) {
     for (byte i = 0; i < 4; ++i) {
       if (rc522.uid.uidByte[i] != authorizedUID[i]) { authorized = false; break; }
@@ -47,10 +49,13 @@ void door_open_close() {
     for (int a = close_door; a >= open_door; --a) {
       servo.write(a);
       delay(10);
+    } 
+  } else{
+    delay(100);
+    for (int a = open_door; a <= close_door; ++a) {
+      servo.write(a);
+      delay(10);
     }
-  } else {
-    Serial.println("<< WARNING !!! >>  This card is not registered");
-    delay(500);
   }
 
   rc522.PICC_HaltA();
