@@ -1,34 +1,44 @@
-
-static const int BuzzerPin = 8;
 static const int MAG_PIN = 3;
-static const int numTones = 8;
-static const int tones[numTones] = {1479, 523, 1479, 523, 1479, 523, 1479, 523};
-
-// setup() 대신 메인 스케치의 setup()에서 한 번 호출하세요
+static const int LED_PIN = 11; // PWM 가능한 핀으로 변경 (UNO: 3,5,6,9,10,11)
+  
 void initMagnetic() {
     pinMode(MAG_PIN, INPUT); // 리드스위치 신호핀
-    pinMode(BuzzerPin, OUTPUT);
+    pinMode(LED_PIN, OUTPUT); // LED 출력
 }
 
-// loop() 대신 메인 스케치의 loop()에서 주기적으로 호출하세요
 void pollMagnetic() {
-    // 리드스위치가 HIGH 면 Buzzer OFF
     if (digitalRead(MAG_PIN) == HIGH) {
-        // 아무 동작 없음
-        return;
+      Serial.println("mag, HIGH");
+      return;
+    } else if (digitalRead(MAG_PIN) == LOW) {
+      // tone(BuzzerPin, 100);    // 100Hz 톤
+      LED_ON();
+      delay(2000);               // 2초
+      // noTone(BuzzerPin);
+      LED_OFF();
     }
-    // 리드스위치가 LOW면 Buzzer ON
-    for (int i = 0; i < numTones; i++) {
-        tone(BuzzerPin, tones[i]);
-        delay(500);
-    }
-    noTone(BuzzerPin);
-    delay(500);
+}
+void LED_ON() {
+  digitalWrite(8, HIGH);
+  digitalWrite(9, HIGH);
+  digitalWrite(10, HIGH);
+}
+
+void LED_OFF() {
+  digitalWrite(8, LOW);
+  digitalWrite(9, LOW);
+  digitalWrite(10, LOW);
 }
 
 void setup() {
   Serial.begin(9600);
   initMagnetic(); // 초기화 호출
+
+  pinMode(8, OUTPUT);
+  pinMode(9, OUTPUT);
+  pinMode(10, OUTPUT);
+
+  // pinMode(LED_PIN, OUTPUT); // initMagnetic에서 설정됨
 }
 
 void loop() {

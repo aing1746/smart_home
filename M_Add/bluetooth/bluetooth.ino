@@ -1,103 +1,79 @@
 #include <SoftwareSerial.h>
-#include "DHT.h"
 
-#define BT_RXD 5
-#define BT_TXD 4
-SoftwareSerial bluetooth(BT_RXD, BT_TXD);
+// 블루투스 통신을 위한 객체 생성 (아두이노 19번(RX), 18번(TX) 핀 사용)
+// <RX 핀, TX 핀>
+SoftwareSerial mySerial(19, 18);
+static const int MAG_PIN = 3;
+static const int LED_PIN = 11; // PWM 가능한 핀으로 변경
+static const int BuzzerPin = 7;
 
-#define DHTPIN 2
-#define DHTTYPE DHT11   // DHT 11
-DHT dht(DHTPIN, DHTTYPE);
-
-#define LED_G 8
-#define LED_R 9
-#define LED_Y 10
-int led_mod = 1;
+// 전역변수로 선언
+char c = '0';
 
 void setup() {
-  // put your setup code here, to run once:
-  bluetooth.begin(9600);
-  dht.begin();
-  Serial.begin(9600);
-  delay(1000);
-
-  pinMode(LED_G, OUTPUT);
-  pinMode(LED_R, OUTPUT);
-  pinMode(LED_Y, OUTPUT);
-}
-
-void LED_ON(int G, int R, int Y)
-{
-  digitalWrite(LED_G, LOW);
-  digitalWrite(LED_R, LOW);
-  digitalWrite(LED_Y, LOW);
-  if (G > 0) {
-    digitalWrite(LED_G, HIGH);
-  }
-  if (R > 0) {
-    digitalWrite(LED_R, HIGH);
-  }
-  if (Y > 0) {
-    digitalWrite(LED_Y, HIGH);
-  }
-}
-
-
-void loop() {
-  delay(1000);
-  //LED_ON(led_mod & 0x01, led_mod & 0x02, led_mod & 0x04);
-  //led_mod++;
-  //LED_ON(led_mod & 0x01, led_mod & 0x02, led_mod & 0x04);
-  //led_mod = led_mod << 1;
-  //if (led_mod > 0x04)
-  //  led_mod = 1;
-
-  // put your main code here, to run repeatedly:
-  char rec_data = 0;
-  if (bluetooth.available()) {
-    rec_data = bluetooth.read();
-    Serial.println(rec_data);
-  }
+  Serial.begin(9600);     // PC 시리얼 모니터
+  Serial1.begin(9600);    // 블루투스 모듈 (핀 18, 19)
+  initMagnetic(); // 초기화 호출
   
-  if (rec_data == '1') {
-    LED_ON(1, 0, 0);
-  }
-  else if (rec_data == '2') {
-    LED_ON(0, 1, 0);
-  }
-  else if (rec_data == '3') {
-    LED_ON(0, 0, 1);
-  }
+  pinMode(8, OUTPUT);
+  pinMode(9, OUTPUT);
+  pinMode(10, OUTPUT);
+}
 
-  // Reading temperature or humidity takes about 250 milliseconds!
-  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-  float h = dht.readHumidity();
-  // Read temperature as Celsius (the default)
-  float t = dht.readTemperature();
-  // Read temperature as Fahrenheit (isFahrenheit = true)
-  float f = dht.readTemperature(true);
+void initMagnetic() {
+  pinMode(MAG_PIN, INPUT); // 리드스위치 신호핀
+  pinMode(LED_PIN, OUTPUT); // LED 출력
+  pinMode(BuzzerPin, OUTPUT); // 부저 출력
+}
 
-  // Check if any reads failed and exit early (to try again).
-  if (isnan(h) || isnan(t) || isnan(f)) {
-    Serial.println(F("Failed to read from DHT sensor!"));
+void pollMagnetic() {
+  if (c == '1') {
+    if (digitalRead(MAG_PIN) == LOW) {
+      Serial.println("mag, HIGH");
+      return;
+    } else if (digitalRead(MAG_PIN) == HIGH) {
+      tone(BuzzerPin, 100);    // 100Hz 톤
+      LED_ON();
+      delay(2000);               // 2초
+      noTone(BuzzerPin);
+      LED_OFF();
+    }
+  } else if (c == '4') {
     return;
   }
-  Serial.print(F("Humidity: "));
-  Serial.print(h);
-  Serial.print(F("%  Temperature: "));
-  Serial.print(t);
-  Serial.println(F("°C "));
-  char charbuf[20] = {0};
-  if (rec_data == 't') {
-    String c = String(t);
-    c.toCharArray(charbuf, c.length());
-    bluetooth.write(charbuf);
-    Serial.println(charbuf);
+}
+
+void LED_ON() {
+  digitalWrite(8, HIGH);
+  digitalWrite(9, HIGH);
+  digitalWrite(10, HIGH);
+}
+
+void LED_OFF() {
+  digitalWrite(8, LOW);
+  digitalWrite(9, LOW);
+  digitalWrite(10, LOW);
+}
+
+void bt_vlalue() {
+  if (Serial1.available()) {
+    c = Serial1.read();  // 전역변수 c에 저장
   }
-  else if (rec_data == 'h') {
-    String c = String(h);
-    c.toCharArray(charbuf, c.length());
-    bluetooth.write(charbuf);
-    Serial.println(charbuf);
+}
+
+void loop() {
+  bt_vlalue();
+  pollMagnetic();
+  
+  if (c == '2') {
+    LED_ON();
+  } else if (c == '5') {
+    LED_OFF();
+  }
+  
+  if (c == '3') {
+    LED_ON();
+  } else if (c == '6') {
+    LED_OFF();
   }
 }
